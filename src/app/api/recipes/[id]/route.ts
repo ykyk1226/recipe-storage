@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
 export async function GET(
   request: Request,
@@ -140,6 +141,11 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
+      }
+    }
     console.error('Error deleting recipe:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
