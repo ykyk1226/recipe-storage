@@ -16,6 +16,7 @@ import {
   Loader2,
   BookOpen 
 } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 interface Ingredient {
   id: string;
@@ -182,6 +183,10 @@ export default function MealPlannerView({
   // Feedback states
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // Delete confirm states
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [mealPlanIdToDelete, setMealPlanIdToDelete] = useState<string | null>(null);
+
   // Generate 7 days of the current week
   const weekDays = Array.from({ length: 7 }).map((_, i) => {
     const day = new Date(currentWeekStart);
@@ -270,13 +275,20 @@ export default function MealPlannerView({
     }
   };
 
-  // Delete meal plan
-  const handleDeleteMeal = async (id: string, e: React.MouseEvent) => {
+  // Delete meal plan (opens confirmation dialog)
+  const handleDeleteMeal = (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent opening recipe detail
-    if (!window.confirm('この献立を削除しますか？')) return;
+    setMealPlanIdToDelete(id);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  // Performs actual delete meal plan operation
+  const executeDeleteMeal = async () => {
+    if (!mealPlanIdToDelete) return;
+    setIsDeleteConfirmOpen(false);
 
     try {
-      const res = await fetch(`/api/meal-plans?id=${id}`, {
+      const res = await fetch(`/api/meal-plans?id=${mealPlanIdToDelete}`, {
         method: 'DELETE',
       });
 
@@ -289,6 +301,8 @@ export default function MealPlannerView({
     } catch (error) {
       console.error('Failed to delete meal plan:', error);
       showToast('通信エラーが発生しました。', 'error');
+    } finally {
+      setMealPlanIdToDelete(null);
     }
   };
 
@@ -475,25 +489,27 @@ export default function MealPlannerView({
                   }`}
                 >
                   {/* Left Column: Date Info */}
-                  <div className="lg:w-40 shrink-0 flex lg:flex-col justify-between items-center lg:items-start lg:border-r border-slate-100 lg:pr-4 py-1">
-                    <div className="flex items-center lg:items-start space-x-3 lg:space-x-0 lg:space-y-1">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all shadow-sm ${
-                        isDayToday 
-                          ? 'bg-primary-green text-white ring-4 ring-emerald-100' 
-                          : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {day.getDate()}
-                      </div>
-                      <div className="flex flex-col lg:items-start">
-                        <span className="text-sm font-bold text-slate-800">
-                          {getJpDayName(day)}曜日
-                        </span>
-                        <span className="text-xs text-slate-400 font-medium">
-                          {day.getMonth() + 1}月
-                        </span>
+                  <div className="w-full lg:w-44 shrink-0 flex flex-row lg:flex-col justify-between items-center lg:items-start lg:border-r border-slate-100 lg:pr-4 py-2">
+                    <div className="flex flex-row lg:flex-col items-center lg:items-start gap-3 lg:gap-2">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all shadow-sm shrink-0 ${
+                          isDayToday 
+                            ? 'bg-primary-green text-white ring-4 ring-emerald-100' 
+                            : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {day.getDate()}
+                        </div>
+                        <div className="flex flex-col select-none">
+                          <span className="text-sm font-bold text-slate-800 leading-tight">
+                            {getJpDayName(day)}曜日
+                          </span>
+                          <span className="text-xs text-slate-400 font-medium">
+                            {day.getMonth() + 1}月
+                          </span>
+                        </div>
                       </div>
                       {isDayToday && (
-                        <span className="lg:mt-1.5 px-2 py-0.5 bg-primary-green/10 text-primary-green text-[10px] font-bold rounded-full border border-primary-green/20">
+                        <span className="px-2 py-0.5 bg-primary-green/10 text-primary-green text-[10px] font-bold rounded-full border border-primary-green/20 self-start lg:mt-1">
                           今日
                         </span>
                       )}
@@ -511,30 +527,30 @@ export default function MealPlannerView({
                     </button>
                   </div>
 
-                  {/* Right Column: 4 Meal slots */}
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                  {/* Right Column: 4 Meal slots stacked vertically */}
+                  <div className="flex-1 space-y-3">
                     {MEAL_TYPES.map((type) => {
                       const slotPlans = getPlansForSlot(day, type);
 
                       return (
                         <div 
                           key={type}
-                          className="bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col space-y-2 min-h-[120px] transition-all"
+                          className="flex flex-col sm:flex-row sm:items-center gap-3 pb-2.5 border-b border-slate-100 last:border-0 last:pb-0"
                         >
-                          {/* Slot Header */}
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                          {/* Slot Label (e.g. 朝食, 昼食) */}
+                          <div className="sm:w-20 shrink-0 select-none">
+                            <span className="inline-block text-xs font-bold text-slate-400 bg-slate-100/70 px-2.5 py-1 rounded-md">
                               {type}
                             </span>
                           </div>
 
-                          {/* List of recipes in this slot */}
-                          <div className="flex-1 space-y-2">
+                          {/* List of recipes & Add button in a row */}
+                          <div className="flex-grow flex flex-wrap items-center gap-2">
                             {slotPlans.map((plan) => (
                               <div
                                 key={plan.id}
                                 onClick={() => onRecipeClick(plan.recipe)}
-                                className="group relative bg-white border border-slate-200/80 rounded-xl p-2 shadow-xs hover:border-primary-green/50 hover:shadow-sm transition-all cursor-pointer flex items-center space-x-2"
+                                className="group relative bg-slate-50 hover:bg-slate-100/80 border border-slate-200/60 rounded-xl p-2 pr-8 shadow-xs hover:border-primary-green/45 hover:shadow-xs transition-all cursor-pointer flex items-center space-x-3 w-64 shrink-0"
                               >
                                 {/* Mini Image */}
                                 {plan.recipe.image ? (
@@ -550,8 +566,8 @@ export default function MealPlannerView({
                                 )}
 
                                 {/* Title & Stats */}
-                                <div className="flex-1 min-w-0 pr-6">
-                                  <p className="text-xs font-bold text-slate-800 truncate leading-snug">
+                                <div className="flex-grow min-w-0">
+                                  <p className="text-xs font-bold text-slate-800 truncate leading-snug" title={plan.recipe.title}>
                                     {plan.recipe.title}
                                   </p>
                                   {/* Categories indicator */}
@@ -559,7 +575,7 @@ export default function MealPlannerView({
                                     {plan.recipe.categories.slice(0, 2).map((cat) => (
                                       <span 
                                         key={cat.id} 
-                                        className="w-2 h-2 rounded-full inline-block"
+                                        className="w-2.5 h-2.5 rounded-full inline-block"
                                         style={{ backgroundColor: cat.color }}
                                         title={cat.name}
                                       />
@@ -578,27 +594,27 @@ export default function MealPlannerView({
                                 {/* Delete button on hover/group */}
                                 <button
                                   onClick={(e) => handleDeleteMeal(plan.id, e)}
-                                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                                   title="削除"
                                 >
                                   <Trash2 size={13} />
                                 </button>
                               </div>
                             ))}
-                          </div>
 
-                          {/* Add meal button */}
-                          <button
-                            onClick={() => {
-                              setSelectedSlot({ date: day, mealType: type });
-                              setIsModalOpen(true);
-                              setSearchQuery('');
-                            }}
-                            className="w-full flex items-center justify-center space-x-1 py-1.5 border border-dashed border-slate-200 hover:border-primary-green text-slate-400 hover:text-primary-green rounded-lg text-xs font-semibold transition-all cursor-pointer bg-white"
-                          >
-                            <Plus size={12} />
-                            <span>追加</span>
-                          </button>
+                            {/* Add meal button */}
+                            <button
+                              onClick={() => {
+                                setSelectedSlot({ date: day, mealType: type });
+                                setIsModalOpen(true);
+                                setSearchQuery('');
+                              }}
+                              className="inline-flex items-center justify-center space-x-1 px-3 py-2 border border-dashed border-slate-200 hover:border-primary-green hover:bg-emerald-50/10 text-slate-400 hover:text-primary-green rounded-xl text-xs font-semibold transition-all cursor-pointer bg-white h-10 shrink-0"
+                            >
+                              <Plus size={12} />
+                              <span>{slotPlans.length > 0 ? '追加' : 'レシピを追加'}</span>
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -719,6 +735,20 @@ export default function MealPlannerView({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        title="献立の削除"
+        message="この献立を削除しますか？"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        isDestructive={true}
+        onConfirm={executeDeleteMeal}
+        onCancel={() => {
+          setIsDeleteConfirmOpen(false);
+          setMealPlanIdToDelete(null);
+        }}
+      />
     </div>
   );
 }

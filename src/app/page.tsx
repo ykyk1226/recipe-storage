@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, BookOpen, RefreshCw } from 'lucide-react';
+import { Search, BookOpen, RefreshCw, PanelLeftOpen, PanelRightOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import ShoppingList from '@/components/ShoppingList';
 import RecipeCard from '@/components/RecipeCard';
@@ -9,12 +9,18 @@ import RecipeDetailDrawer from '@/components/RecipeDetailDrawer';
 import RecipeForm from '@/components/RecipeForm';
 import AIImportView from '@/components/AIImportView';
 import MealPlannerView from '@/components/MealPlannerView';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function Home() {
   // Navigation & View States
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'ai-import' | 'planner'>('list');
   const [selectedRecipe, setSelectedRecipe] = useState<any | null>(null);
   const [editingRecipe, setEditingRecipe] = useState<any | null>(null);
+
+  // Collapsible panels states
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isShoppingListCollapsed, setIsShoppingListCollapsed] = useState(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
 
   // Data States
   const [recipes, setRecipes] = useState<any[]>([]);
@@ -356,21 +362,25 @@ export default function Home() {
     }
   };
 
-  const handleClearAllShoppingItems = async () => {
+  const executeClearAllShoppingItems = async () => {
+    setIsClearConfirmOpen(false);
     if (!activeListId) return;
-    if (window.confirm('このお買い物リスト内のアイテムをすべてクリアしてよろしいですか？')) {
-      try {
-        const res = await fetch(`/api/shopping?clearAll=true&listId=${activeListId}`, {
-          method: 'DELETE',
-        });
-        if (res.ok) {
-          await fetchShoppingItems();
-          await fetchShoppingLists(); // Refresh counts
-        }
-      } catch (err) {
-        console.error('Failed to clear all shopping items:', err);
+    try {
+      const res = await fetch(`/api/shopping?clearAll=true&listId=${activeListId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        await fetchShoppingItems();
+        await fetchShoppingLists(); // Refresh counts
       }
+    } catch (err) {
+      console.error('Failed to clear all shopping items:', err);
     }
+  };
+
+  const handleClearAllShoppingItems = () => {
+    if (!activeListId) return;
+    setIsClearConfirmOpen(true);
   };
 
   // Sidebar Filter callbacks
@@ -389,29 +399,55 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-800">
+    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-800 relative">
+      {/* Floating Panel Open Buttons */}
+      {isSidebarCollapsed && (
+        <button
+          onClick={() => setIsSidebarCollapsed(false)}
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 w-6 h-24 bg-primary-green hover:bg-emerald-600 text-white rounded-r-2xl shadow-lg border-y border-r border-emerald-700/20 transition-all hover:w-8 active:scale-95 cursor-pointer flex items-center justify-center group"
+          title="メニューを開く"
+        >
+          <ChevronRight size={16} className="group-hover:scale-120 transition-transform" />
+        </button>
+      )}
+
+      {isShoppingListCollapsed && (
+        <button
+          onClick={() => setIsShoppingListCollapsed(false)}
+          className="fixed right-0 top-1/2 -translate-y-1/2 z-40 w-6 h-24 bg-primary-green hover:bg-emerald-600 text-white rounded-l-2xl shadow-lg border-y border-l border-emerald-700/20 transition-all hover:w-8 active:scale-95 cursor-pointer flex items-center justify-center group"
+          title="お買い物リストを開く"
+        >
+          <ChevronLeft size={16} className="group-hover:scale-120 transition-transform" />
+        </button>
+      )}
+
       {/* 1. Left Sidebar */}
-      <Sidebar
-        categories={categories}
-        selectedCategories={selectedCategories}
-        onToggleCategory={handleToggleCategoryFilter}
-        onlyFavorites={onlyFavorites}
-        onToggleFavorites={() => setOnlyFavorites(!onlyFavorites)}
-        ingredientFilters={ingredientFilters}
-        onAddIngredient={handleAddIngredientFilter}
-        onRemoveIngredient={handleRemoveIngredientFilter}
-        activeTab={activeTab}
-        setActiveTab={(tab) => {
-          setActiveTab(tab);
-          if (tab !== 'list') {
-            setSelectedRecipe(null);
-            setEditingRecipe(null);
-          }
-        }}
-      />
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 bg-white h-screen ${
+        isSidebarCollapsed ? 'w-0' : 'w-64 border-r border-slate-200'
+      }`}>
+        <Sidebar
+          categories={categories}
+          selectedCategories={selectedCategories}
+          onToggleCategory={handleToggleCategoryFilter}
+          onlyFavorites={onlyFavorites}
+          onToggleFavorites={() => setOnlyFavorites(!onlyFavorites)}
+          ingredientFilters={ingredientFilters}
+          onAddIngredient={handleAddIngredientFilter}
+          onRemoveIngredient={handleRemoveIngredientFilter}
+          activeTab={activeTab}
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            if (tab !== 'list' && tab !== 'planner') {
+              setSelectedRecipe(null);
+              setEditingRecipe(null);
+            }
+          }}
+          onCollapse={() => setIsSidebarCollapsed(true)}
+        />
+      </div>
 
       {/* 2. Middle Main Content Area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50/50">
+      <main className="flex-grow flex flex-col h-full overflow-hidden bg-slate-50/50 transition-all duration-300">
         {activeTab === 'list' && (
           <div className="flex-1 flex overflow-hidden">
             {/* Left part of Middle column - Recipe Grid */}
@@ -488,6 +524,7 @@ export default function Home() {
                   initialData={editingRecipe}
                   onSubmit={handleSubmitRecipe}
                   onCancel={() => setEditingRecipe(null)}
+                  isDrawer={true}
                 />
               </div>
             )}
@@ -519,33 +556,75 @@ export default function Home() {
 
         {/* Tab 4: Meal Planner */}
         {activeTab === 'planner' && (
-          <MealPlannerView
-            recipes={recipes}
-            onRecipeClick={(recipe) => {
-              setSelectedRecipe(recipe);
-              setActiveTab('list'); // Switch to list view to show drawer
-            }}
-            onAddIngredientsToShopping={handleAddIngredientsToShopping}
-            activeListName={shoppingLists.find(l => l.id === activeListId)?.name}
-          />
+          <div className="flex-1 flex overflow-hidden">
+            <MealPlannerView
+              recipes={recipes}
+              onRecipeClick={(recipe) => {
+                setSelectedRecipe(recipe);
+              }}
+              onAddIngredientsToShopping={handleAddIngredientsToShopping}
+              activeListName={shoppingLists.find(l => l.id === activeListId)?.name}
+            />
+
+            {/* Right part of Middle column - Split details drawer */}
+            {selectedRecipe && !editingRecipe && (
+              <RecipeDetailDrawer
+                recipe={selectedRecipe}
+                onClose={() => setSelectedRecipe(null)}
+                onEdit={() => setEditingRecipe(selectedRecipe)}
+                onDelete={handleDeleteRecipe}
+                onToggleFavorite={(id, isFav) => handleToggleFavorite(id, isFav)}
+                onAddIngredientsToShopping={handleAddIngredientsToShopping}
+              />
+            )}
+
+            {/* Split edit form */}
+            {editingRecipe && (
+              <div className="w-[520px] border-l border-slate-200 bg-white h-screen overflow-y-auto p-4 shadow-2xl z-20 animate-in slide-in-from-right duration-300">
+                <RecipeForm
+                  categories={categories}
+                  initialData={editingRecipe}
+                  onSubmit={handleSubmitRecipe}
+                  onCancel={() => setEditingRecipe(null)}
+                  isDrawer={true}
+                />
+              </div>
+            )}
+          </div>
         )}
       </main>
 
       {/* 3. Right Shopping List */}
-      <ShoppingList
-        items={shoppingItems}
-        lists={shoppingLists}
-        activeListId={activeListId}
-        onListChange={setActiveListId}
-        onAddList={handleAddShoppingList}
-        onUpdateList={handleUpdateShoppingList}
-        onDeleteList={handleDeleteShoppingList}
-        onToggleItem={handleToggleShoppingItem}
-        onAddItem={handleAddShoppingItem}
-        onDeleteItem={handleDeleteShoppingItem}
-        onClearChecked={handleClearCheckedShoppingItems}
-        onClearAll={handleClearAllShoppingItems}
-        loading={loadingShopping}
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 bg-white h-screen ${
+        isShoppingListCollapsed ? 'w-0' : 'w-80 border-l border-slate-200'
+      }`}>
+        <ShoppingList
+          items={shoppingItems}
+          lists={shoppingLists}
+          activeListId={activeListId}
+          onListChange={setActiveListId}
+          onAddList={handleAddShoppingList}
+          onUpdateList={handleUpdateShoppingList}
+          onDeleteList={handleDeleteShoppingList}
+          onToggleItem={handleToggleShoppingItem}
+          onAddItem={handleAddShoppingItem}
+          onDeleteItem={handleDeleteShoppingItem}
+          onClearChecked={handleClearCheckedShoppingItems}
+          onClearAll={handleClearAllShoppingItems}
+          loading={loadingShopping}
+          onCollapse={() => setIsShoppingListCollapsed(true)}
+        />
+      </div>
+
+      <ConfirmDialog
+        isOpen={isClearConfirmOpen}
+        title="お買い物リストのクリア"
+        message="このお買い物リスト内のアイテムをすべてクリアしてよろしいですか？"
+        confirmLabel="クリアする"
+        cancelLabel="キャンセル"
+        isDestructive={true}
+        onConfirm={executeClearAllShoppingItems}
+        onCancel={() => setIsClearConfirmOpen(false)}
       />
     </div>
   );

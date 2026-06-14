@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BookOpen, Plus, Sparkles, Heart, Tag, X, PlusCircle, Calendar } from 'lucide-react';
+import { BookOpen, Plus, Sparkles, Heart, Tag, X, PlusCircle, Calendar, PanelLeftClose } from 'lucide-react';
 
 interface Category {
   id: string;
@@ -20,6 +20,7 @@ interface SidebarProps {
   onRemoveIngredient: (name: string) => void;
   activeTab: 'list' | 'create' | 'ai-import' | 'planner';
   setActiveTab: (tab: 'list' | 'create' | 'ai-import' | 'planner') => void;
+  onCollapse?: () => void;
 }
 
 export default function Sidebar({
@@ -33,6 +34,7 @@ export default function Sidebar({
   onRemoveIngredient,
   activeTab,
   setActiveTab,
+  onCollapse,
 }: SidebarProps) {
   const [ingInput, setIngInput] = useState('');
 
@@ -48,11 +50,22 @@ export default function Sidebar({
   return (
     <aside className="w-64 border-r border-slate-200 bg-white flex flex-col h-screen overflow-y-auto shrink-0 select-none">
       {/* App Header */}
-      <div className="p-6 border-b border-slate-100 flex items-center space-x-2">
-        <div className="p-2 bg-primary-green text-white rounded-lg">
-          <BookOpen size={20} />
+      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="p-2 bg-primary-green text-white rounded-lg">
+            <BookOpen size={20} />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-800">Recipe Storage</h1>
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-800">Recipe Storage</h1>
+        {onCollapse && (
+          <button
+            onClick={onCollapse}
+            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-all cursor-pointer"
+            title="メニューを閉じる"
+          >
+            <PanelLeftClose size={18} />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}

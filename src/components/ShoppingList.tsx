@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Trash2, CheckCircle2, Circle, Plus, RefreshCw, FolderPlus, X, Trash, Edit3, Check } from 'lucide-react';
+import { ShoppingCart, Trash2, CheckCircle2, Circle, Plus, RefreshCw, FolderPlus, X, Trash, Edit3, Check, PanelRightClose } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 interface ShoppingListObj {
   id: string;
@@ -36,6 +37,7 @@ interface ShoppingListProps {
   onClearChecked: () => void;
   onClearAll: () => void;
   loading?: boolean;
+  onCollapse?: () => void;
 }
 
 export default function ShoppingList({
@@ -52,6 +54,7 @@ export default function ShoppingList({
   onClearChecked,
   onClearAll,
   loading = false,
+  onCollapse,
 }: ShoppingListProps) {
   const [nameInput, setNameInput] = useState('');
   const [amountInput, setAmountInput] = useState('');
@@ -64,6 +67,7 @@ export default function ShoppingList({
   // List renaming states
   const [isEditingListName, setIsEditingListName] = useState(false);
   const [editListName, setEditListName] = useState('');
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const activeList = lists.find((l) => l.id === activeListId);
 
@@ -118,13 +122,24 @@ export default function ShoppingList({
             <ShoppingCart size={18} className="text-primary-green" />
             <h2 className="text-base font-bold tracking-tight">お買い物リスト</h2>
           </div>
-          <button
-            onClick={() => setShowAddListForm(!showAddListForm)}
-            className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700 transition-colors"
-            title="新しいお買い物リストを作成"
-          >
-            {showAddListForm ? <X size={16} /> : <FolderPlus size={16} />}
-          </button>
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={() => setShowAddListForm(!showAddListForm)}
+              className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
+              title="新しいお買い物リストを作成"
+            >
+              {showAddListForm ? <X size={16} /> : <FolderPlus size={16} />}
+            </button>
+            {onCollapse && (
+              <button
+                onClick={onCollapse}
+                className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                title="お買い物リストを閉じる"
+              >
+                <PanelRightClose size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Create new list form (dropdown slider) */}
@@ -203,8 +218,8 @@ export default function ShoppingList({
               {lists.length > 1 && (
                 <button
                   onClick={() => {
-                    if (activeList && window.confirm(`お買い物リスト「${activeList.name}」を削除してもよろしいですか？（中身も削除されます）`)) {
-                      onDeleteList(activeListId);
+                    if (activeList) {
+                      setIsDeleteConfirmOpen(true);
                     }
                   }}
                   className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0 border border-transparent hover:border-slate-100"
@@ -341,6 +356,20 @@ export default function ShoppingList({
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        title="お買い物リストの削除"
+        message={activeList ? `お買い物リスト「${activeList.name}」を削除してもよろしいですか？\n（リスト内のアイテムもすべて削除されます）` : ''}
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        isDestructive={true}
+        onConfirm={() => {
+          onDeleteList(activeListId);
+          setIsDeleteConfirmOpen(false);
+        }}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+      />
     </aside>
   );
 }

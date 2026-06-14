@@ -41,6 +41,7 @@ interface RecipeFormProps {
   initialData: any | null; // Can be full Recipe object when editing
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  isDrawer?: boolean;
 }
 
 export default function RecipeForm({
@@ -48,6 +49,7 @@ export default function RecipeForm({
   initialData,
   onSubmit,
   onCancel,
+  isDrawer = false,
 }: RecipeFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -205,7 +207,14 @@ export default function RecipeForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto p-6 bg-white border border-slate-200 rounded-2xl shadow-sm select-none">
+    <form 
+      onSubmit={handleSubmit} 
+      className={`space-y-6 select-none ${
+        isDrawer 
+          ? 'w-full p-2' 
+          : 'max-w-4xl mx-auto p-6 bg-white border border-slate-200 rounded-2xl shadow-sm'
+      }`}
+    >
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <h2 className="text-xl font-bold text-slate-800">
           {initialData ? 'レシピを編集する' : '新しいレシピを追加'}
@@ -219,7 +228,7 @@ export default function RecipeForm({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={isDrawer ? 'space-y-6' : 'grid grid-cols-1 md:grid-cols-2 gap-6'}>
         {/* Left Column - General Info */}
         <div className="space-y-4">
           <div className="space-y-1.5">
@@ -245,7 +254,7 @@ export default function RecipeForm({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700">人数分 <span className="text-red-500">*</span></label>
               <select
@@ -259,33 +268,35 @@ export default function RecipeForm({
               </select>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700">下ごしらえ時間</label>
-              <div className="relative flex items-center">
-                <input
-                  type="number"
-                  min={0}
-                  value={prepTime}
-                  onChange={(e) => setPrepTime(e.target.value)}
-                  placeholder="10"
-                  className="w-full text-sm pl-4 pr-8 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-primary-green focus:ring-1 focus:ring-primary-green"
-                />
-                <span className="absolute right-3 text-xs text-slate-400 font-bold">分</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-700">下ごしらえ時間</label>
+                <div className="relative flex items-center">
+                  <input
+                    type="number"
+                    min={0}
+                    value={prepTime}
+                    onChange={(e) => setPrepTime(e.target.value)}
+                    placeholder="10"
+                    className="w-full text-sm pl-4 pr-8 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-primary-green focus:ring-1 focus:ring-primary-green"
+                  />
+                  <span className="absolute right-3 text-xs text-slate-400 font-bold">分</span>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700">調理時間</label>
-              <div className="relative flex items-center">
-                <input
-                  type="number"
-                  min={0}
-                  value={cookTime}
-                  onChange={(e) => setCookTime(e.target.value)}
-                  placeholder="20"
-                  className="w-full text-sm pl-4 pr-8 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-primary-green focus:ring-1 focus:ring-primary-green"
-                />
-                <span className="absolute right-3 text-xs text-slate-400 font-bold">分</span>
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-700">調理時間</label>
+                <div className="relative flex items-center">
+                  <input
+                    type="number"
+                    min={0}
+                    value={cookTime}
+                    onChange={(e) => setCookTime(e.target.value)}
+                    placeholder="20"
+                    className="w-full text-sm pl-4 pr-8 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-primary-green focus:ring-1 focus:ring-primary-green"
+                  />
+                  <span className="absolute right-3 text-xs text-slate-400 font-bold">分</span>
+                </div>
               </div>
             </div>
           </div>
@@ -341,7 +352,7 @@ export default function RecipeForm({
         </div>
 
         {/* Right Column - Ingredients Input */}
-        <div className="space-y-4 flex flex-col h-[520px]">
+        <div className={`space-y-4 flex flex-col ${isDrawer ? 'h-[320px]' : 'h-[520px]'}`}>
           <div className="flex items-center justify-between shrink-0">
             <label className="text-sm font-bold text-slate-700">材料リスト <span className="text-red-500">*</span></label>
             <button

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Heart, Clock, Users, Link as LinkIcon, Plus, Edit, Trash2, ShoppingBag, CheckSquare, Square } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 interface Category {
   id: string;
@@ -57,6 +58,7 @@ export default function RecipeDetailDrawer({
 }: RecipeDetailDrawerProps) {
   const [servingsScale, setServingsScale] = useState(2);
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   // Reset scale and ingredient selection when recipe changes
   useEffect(() => {
@@ -155,11 +157,7 @@ export default function RecipeDetailDrawer({
             <Edit size={18} />
           </button>
           <button
-            onClick={() => {
-              if (window.confirm(`「${recipe.title}」を削除してもよろしいですか？`)) {
-                onDelete(recipe.id);
-              }
-            }}
+            onClick={() => setIsDeleteConfirmOpen(true)}
             className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50/50 rounded-lg transition-all"
             title="削除"
           >
@@ -346,6 +344,22 @@ export default function RecipeDetailDrawer({
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        title="レシピの削除"
+        message={recipe ? `「${recipe.title}」を削除してもよろしいですか？` : ''}
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        isDestructive={true}
+        onConfirm={() => {
+          if (recipe) {
+            onDelete(recipe.id);
+            setIsDeleteConfirmOpen(false);
+          }
+        }}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+      />
     </div>
   );
 }
