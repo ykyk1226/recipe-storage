@@ -1,0 +1,96 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// レシピモデル
+model Recipe {
+  id          String   @id @default(uuid())
+  title       String   // レシピ名
+  description String?  // レシピの説明・メモ
+  servings    Int      @default(2) // 何人前か
+  prepTime    Int?     // 下ごしらえ時間 (分)
+  cookTime    Int?     // 調理時間 (分)
+  image       String?  // レシピ画像のURL
+  isFavorite  Boolean  @default(false) // お気に入りフラグ
+  sourceUrl   String?  // 参考にしたWebサイトのURL
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  ingredients Ingredient[]
+  steps       Step[]
+  categories  Category[] @relation("RecipeToCategory")
+  shoppingItems ShoppingItem[]
+  mealPlans     MealPlan[]
+}
+
+// 材料モデル (材料フィルター用)
+model Ingredient {
+  id       String @id @default(uuid())
+  name     String // 材料名 (例: "豚バラ肉", "キャベツ")
+  amount   String // 分量 (例: "200", "1/4")
+  unit     String // 単位 (例: "g", "個", "大さじ1")
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([name]) // 材料名での検索を高速化
+}
+
+// 作り方の手順モデル
+model Step {
+  id          String  @id @default(uuid())
+  stepNumber  Int     // 手順番号 (1, 2, 3...)
+  instruction String  // 手順の説明文
+  image       String? // 手順ごとの画像URL
+  recipeId    String
+  recipe      Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+}
+
+// カテゴリモデル
+model Category {
+  id      String   @id @default(uuid())
+  name    String   @unique // カテゴリ名 (例: "主菜", "副菜", "パスタ", "スープ")
+  color   String   @default("#94a3b8") // カテゴリのテーマカラー (HEX)
+  recipes Recipe[] @relation("RecipeToCategory")
+}
+
+// お買い物リスト（親）
+model ShoppingList {
+  id        String         @id @default(uuid())
+  name      String         // リストの名前（例: "6/15の夕食", "バーベキューの買い出し"）
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  items     ShoppingItem[]
+}
+
+// お買い物リストモデル (買い物アイテム)
+model ShoppingItem {
+  id             String       @id @default(uuid())
+  name           String       // 買うもの (材料名など)
+  amount         String?      // 分量
+  unit           String?      // 単位
+  isChecked      Boolean      @default(false) // 買い忘れ防止のチェック
+  recipeId       String?      // どのレシピから追加されたか (任意)
+  recipe         Recipe?      @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  shoppingListId String       // 所属するリストのID
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// 献立プランモデル
+model MealPlan {
+  id        String   @id @default(uuid())
+  date      DateTime // 計画する日付 (時間部分は00:00:00にする)
+  mealType  String   // 食事タイプ ("朝食", "昼食", "夕食", "その他")
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date, mealType, recipeId]) // 日付・食事・レシピの組み合わせをユニークに制限
+}

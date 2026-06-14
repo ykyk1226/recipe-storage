@@ -1,0 +1,122 @@
+[
+  {
+    "id": "91f91df6-cd9a-442c-83fc-f0f2637cc48c",
+    "name": "にんじん",
+    "amount": "0.5",
+    "unit": "本",
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "3fefccc7-aa70-440d-8711-d07547b8dc3e",
+    "name": "合い挽き肉",
+    "amount": "250",
+    "unit": "g",
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "5563842e-bfe3-47bf-9299-9eb0f5cc4fd1",
+    "name": "卵",
+    "amount": "0.5",
+    "unit": "個",
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "be605a85-f391-4343-aaef-054f6c8b079f",
+    "name": "パン粉",
+    "amount": "少々",
+    "unit": null,
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "33b83391-1934-44d4-9d23-9b5454b8b374",
+    "name": "塩",
+    "amount": "少々",
+    "unit": null,
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "293cbded-a2d8-4394-bde3-140fccd3d837",
+    "name": "油",
+    "amount": "適量",
+    "unit": null,
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "b5aff097-a9a5-43e5-8401-099943444a0d",
+    "name": "水",
+    "amount": "2",
+    "unit": "大さじ",
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "315fa0db-d7b1-43e1-8855-7892ae4b847a",
+    "name": "ケチャップ（子ども用）",
+    "amount": "少し",
+    "unit": null,
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "427519e5-9971-448a-bf4c-e8aa64a45526",
+    "name": "ケチャップ（大人用ソース）",
+    "amount": "2",
+    "unit": "大さじ",
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "b232cd21-a1d6-4a74-a5a5-d4263fea1fcd",
+    "name": "ウスターソース",
+    "amount": "2",
+    "unit": "大さじ",
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "6285955a-438a-45f1-9d41-985c265b4e1a",
+    "name": "みりん",
+    "amount": "1",
+    "unit": "大さじ",
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:22:49.575Z"
+  },
+  {
+    "id": "0dccaf3f-b234-4c72-afc0-fe93014f0854",
+    "name": "玉ねぎ",
+    "amount": "0.5",
+    "unit": "個",
+    "isChecked": false,
+    "recipeId": "6ee44119-58c4-4495-b2d0-e1a58708a2a9",
+    "createdAt": "2026-06-14T02:22:49.575Z",
+    "updatedAt": "2026-06-14T02:23:08.502Z"
+  }
+]
