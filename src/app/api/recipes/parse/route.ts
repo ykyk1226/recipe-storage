@@ -1,13 +1,26 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { z } from 'zod';
+
+const ParseRequestSchema = z.object({
+  text: z.string()
+    .min(1, '解析するテキストを入力してください')
+    .max(10000, '送信できるテキストは最大10,000文字までです'),
+});
 
 export async function POST(request: Request) {
   try {
-    const { text } = await request.json();
-
-    if (!text || typeof text !== 'string' || text.trim() === '') {
-      return NextResponse.json({ error: 'Text content is required' }, { status: 400 });
+    const body = await request.json();
+    
+    const validation = ParseRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'リクエスト内容に不備があります', details: validation.error.format() },
+        { status: 400 }
+      );
     }
+
+    const { text } = validation.data;
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey === '') {
@@ -87,7 +100,7 @@ ${text}`;
   } catch (error: any) {
     console.error('Error parsing recipe with Gemini:', error);
     return NextResponse.json(
-      { error: `Internal Server Error: ${error.message || 'Unknown error'}` }, 
+      { error: 'レシピのAI解析中にエラーが発生しました。入力内容を確認するか、時間をおいて再度お試しください。' }, 
       { status: 500 }
     );
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 
 export async function GET(request: Request) {
   try {
@@ -84,9 +85,41 @@ export async function GET(request: Request) {
   }
 }
 
+const RecipeCreateSchema = z.object({
+  title: z.string().min(1, 'タイトルは必須です').max(100, 'タイトルは100文字以内で入力してください'),
+  description: z.string().max(1000, '説明は1000文字以内で入力してください').nullable().optional(),
+  servings: z.number().int().min(1).max(100).default(2),
+  prepTime: z.number().int().min(0).max(1440).nullable().optional(),
+  cookTime: z.number().int().min(0).max(1440).nullable().optional(),
+  image: z.string().max(100000).nullable().optional(), // Supports Base64/long paths
+  sourceUrl: z.string().max(1000).nullable().optional(),
+  isFavorite: z.boolean().default(false),
+  ingredients: z.array(z.object({
+    name: z.string().min(1, '材料名は必須です').max(100, '材料名は100文字以内で入力してください'),
+    amount: z.string().max(50, '分量は50文字以内で入力してください').default(''),
+    unit: z.string().max(20, '単位は20文字以内で入力してください').default(''),
+  })).optional(),
+  steps: z.array(z.object({
+    stepNumber: z.number().int().min(1).optional(),
+    instruction: z.string().min(1, '手順の説明は必須です').max(1000, '手順説明は1000文字以内で入力してください'),
+    image: z.string().max(100000).nullable().optional(),
+  })).optional(),
+  categoryIds: z.array(z.string().uuid('有効なカテゴリIDを入力してください')).optional(),
+});
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+
+    // Validate request body
+    const validation = RecipeCreateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: '入力内容に不備があります', details: validation.error.format() },
+        { status: 400 }
+      );
+    }
+
     const {
       title,
       description,
@@ -99,38 +132,34 @@ export async function POST(request: Request) {
       ingredients,
       steps,
       categoryIds,
-    } = body;
-
-    if (!title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
-    }
+    } = validation.data;
 
     const recipe = await prisma.recipe.create({
       data: {
         title,
         description,
-        servings: servings !== undefined ? Number(servings) : 2,
-        prepTime: prepTime !== undefined && prepTime !== null ? Number(prepTime) : null,
-        cookTime: cookTime !== undefined && cookTime !== null ? Number(cookTime) : null,
+        servings,
+        prepTime,
+        cookTime,
         image,
         sourceUrl,
-        isFavorite: !!isFavorite,
+        isFavorite,
         ingredients: {
-          create: ingredients?.map((ing: any) => ({
+          create: ingredients?.map((ing) => ({
             name: ing.name,
-            amount: String(ing.amount),
-            unit: String(ing.unit || ''),
+            amount: ing.amount,
+            unit: ing.unit,
           })) || [],
         },
         steps: {
-          create: steps?.map((step: any, index: number) => ({
+          create: steps?.map((step, index) => ({
             stepNumber: step.stepNumber || index + 1,
             instruction: step.instruction,
             image: step.image,
           })) || [],
         },
         categories: {
-          connect: categoryIds?.map((id: string) => ({ id })) || [],
+          connect: categoryIds?.map((id) => ({ id })) || [],
         },
       },
       include: {

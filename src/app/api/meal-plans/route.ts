@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { z } from 'zod';
 
 export async function GET(request: Request) {
   try {
@@ -48,13 +49,26 @@ export async function GET(request: Request) {
   }
 }
 
+const MealPlanCreateSchema = z.object({
+  date: z.string().min(1, '日付は必須です').refine((val) => !isNaN(Date.parse(val)), {
+    message: '有効な日付形式で入力してください',
+  }),
+  mealType: z.enum(['朝食', '昼食', '夕食', 'その他']),
+  recipeId: z.string().uuid('有効なレシピIDを入力してください'),
+});
+
 export async function POST(request: Request) {
   try {
-    const { date, mealType, recipeId } = await request.json();
-
-    if (!date || !mealType || !recipeId) {
-      return NextResponse.json({ error: 'date, mealType, and recipeId are required' }, { status: 400 });
+    const body = await request.json();
+    const validation = MealPlanCreateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: '入力内容に不備があります', details: validation.error.format() },
+        { status: 400 }
+      );
     }
+
+    const { date, mealType, recipeId } = validation.data;
 
     const cleanDate = new Date(date);
     cleanDate.setHours(0, 0, 0, 0);

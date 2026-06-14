@@ -1,5 +1,24 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { z } from 'zod';
+
+const ShoppingItemCreateSchema = z.object({
+  name: z.string().min(1, '名前は必須です').max(100, '名前は100文字以内で入力してください'),
+  amount: z.string().max(50, '分量は50文字以内で入力してください').nullable().optional(),
+  unit: z.string().max(50, '単位は50文字以内で入力してください').nullable().optional(),
+  recipeId: z.string().uuid().nullable().optional(),
+  shoppingListId: z.string().uuid().nullable().optional(),
+});
+
+const ShoppingItemBatchCreateSchema = z.array(ShoppingItemCreateSchema);
+
+const ShoppingItemUpdateSchema = z.object({
+  id: z.string().uuid('有効なIDを入力してください'),
+  isChecked: z.boolean().optional(),
+  name: z.string().min(1).max(100).optional(),
+  amount: z.string().max(50).nullable().optional(),
+  unit: z.string().max(50).nullable().optional(),
+});
 
 export async function GET(request: Request) {
   try {
@@ -44,10 +63,18 @@ export async function POST(request: Request) {
 
     // Support batch adding from recipes (body is array)
     if (Array.isArray(body)) {
-      const itemsData = body.map((item: any) => ({
+      const validation = ShoppingItemBatchCreateSchema.safeParse(body);
+      if (!validation.success) {
+        return NextResponse.json(
+          { error: '入力内容に不備があります', details: validation.error.format() },
+          { status: 400 }
+        );
+      }
+
+      const itemsData = validation.data.map((item) => ({
         name: item.name,
-        amount: item.amount ? String(item.amount) : null,
-        unit: item.unit ? String(item.unit) : null,
+        amount: item.amount || null,
+        unit: item.unit || null,
         recipeId: item.recipeId || null,
         shoppingListId: item.shoppingListId || fallbackListId,
       }));
@@ -70,17 +97,21 @@ export async function POST(request: Request) {
 
       return NextResponse.json(items, { status: 201 });
     } else {
-      const { name, amount, unit, recipeId, shoppingListId } = body;
-
-      if (!name) {
-        return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+      const validation = ShoppingItemCreateSchema.safeParse(body);
+      if (!validation.success) {
+        return NextResponse.json(
+          { error: '入力内容に不備があります', details: validation.error.format() },
+          { status: 400 }
+        );
       }
+
+      const { name, amount, unit, recipeId, shoppingListId } = validation.data;
 
       const item = await prisma.shoppingItem.create({
         data: {
           name,
-          amount: amount ? String(amount) : null,
-          unit: unit ? String(unit) : null,
+          amount: amount || null,
+          unit: unit || null,
           recipeId: recipeId || null,
           shoppingListId: shoppingListId || fallbackListId,
         },
@@ -102,19 +133,23 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, isChecked, name, amount, unit } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    const validation = ShoppingItemUpdateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: '入力内容に不備があります', details: validation.error.format() },
+        { status: 400 }
+      );
     }
+
+    const { id, isChecked, name, amount, unit } = validation.data;
 
     const item = await prisma.shoppingItem.update({
       where: { id },
       data: {
-        isChecked: isChecked !== undefined ? !!isChecked : undefined,
-        name: name !== undefined ? name : undefined,
-        amount: amount !== undefined ? (amount ? String(amount) : null) : undefined,
-        unit: unit !== undefined ? (unit ? String(unit) : null) : undefined,
+        isChecked,
+        name,
+        amount: amount !== undefined ? (amount || null) : undefined,
+        unit: unit !== undefined ? (unit || null) : undefined,
       },
       include: {
         recipe: {
